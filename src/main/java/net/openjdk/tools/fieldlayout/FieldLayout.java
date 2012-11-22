@@ -11,9 +11,8 @@ import java.util.TreeSet;
 public class FieldLayout {
 
     private static final Unsafe U;
-
-    static int addressSize;
-    static int headerSize;
+    private static int ADDRESS_SIZE;
+    private static int HEADER_SIZE;
 
     static {
         // steal Unsafe
@@ -25,13 +24,16 @@ public class FieldLayout {
             throw new IllegalStateException(e);
         }
 
+        // When running with CompressedOops on 64-bit platform, the address size
+        // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
+        // Try to guess the reference field size with this naive trick.
         try {
             long off1 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
             long off2 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
-            addressSize = (int) (off2 - off1);
-            headerSize = (int) Math.min(off1, off2);
+            ADDRESS_SIZE = (int) Math.abs(off2 - off1);
+            HEADER_SIZE = (int) Math.min(off1, off2);
         } catch (NoSuchFieldException e) {
-            addressSize = -1;
+            ADDRESS_SIZE = -1;
         }
     }
 
@@ -64,8 +66,8 @@ public class FieldLayout {
 
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
-        pw.printf("   (header %d bytes)\n", headerSize);
-        nextFree += headerSize;
+        pw.printf("   (header %d bytes)\n", HEADER_SIZE);
+        nextFree += HEADER_SIZE;
 
         for (FieldInfo f : set) {
             if (f.offset > nextFree) {
@@ -83,10 +85,10 @@ public class FieldLayout {
         private final boolean aStatic;
         private final int offset;
         private final Class<?> type;
-        private Class klass;
+        private final Class klass;
 
-        public FieldInfo(Class klass, Field field) {
-            this.klass = klass;
+        public FieldInfo(Class hostKlass, Field field) {
+            klass = hostKlass;
             name = field.getName();
             type = field.getType();
             aStatic = Modifier.isStatic(field.getModifiers());
@@ -111,7 +113,7 @@ public class FieldLayout {
             if (type == float.class)   { return 4; }
             if (type == long.class)    { return 8; }
             if (type == double.class)  { return 8; }
-            return addressSize;
+            return ADDRESS_SIZE;
         }
 
         public String getType() {
