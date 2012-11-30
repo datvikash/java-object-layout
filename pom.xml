@@ -38,6 +38,9 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>net.openjdk.tools.fieldlayout.MainAnalyzer</mainClass>
+                                    <manifestEntries>
+                                        <Premain-Class>net.openjdk.tools.fieldlayout.MainAnalyzer</Premain-Class>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                         </configuration>

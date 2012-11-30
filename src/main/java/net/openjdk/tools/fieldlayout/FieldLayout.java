@@ -3,6 +3,7 @@ package net.openjdk.tools.fieldlayout;
 import sun.misc.Unsafe;
 
 import java.io.PrintStream;
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.SortedSet;
@@ -13,6 +14,7 @@ public class FieldLayout {
     private static final Unsafe U;
     private static int ADDRESS_SIZE;
     private static int HEADER_SIZE;
+    private static Instrumentation inst;
 
     static {
         // steal Unsafe
@@ -35,6 +37,10 @@ public class FieldLayout {
         } catch (NoSuchFieldException e) {
             ADDRESS_SIZE = -1;
         }
+    }
+
+    public static void storeInstrumentation(Instrumentation inst) {
+        FieldLayout.inst = inst;
     }
 
     static class CompressedOopsClass {
@@ -76,6 +82,17 @@ public class FieldLayout {
             pw.printf(" %3d %3d %15s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
 
             nextFree = f.offset + f.getSize();
+        }
+
+        if (inst != null) {
+            try {
+                Object i = klass.newInstance();
+                pw.println("Instrumentation reports " + inst.getObjectSize(i) + " bytes per instance");
+            } catch (InstantiationException e) {
+                pw.println("Instrumentation fails to invoke default constructor (does object have one?)");
+            }
+        } else {
+            pw.println("Instrumentation is not enabled, use -javaagent: to add this JAR as Java agent");
         }
     }
 
