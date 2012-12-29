@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
@@ -7,7 +7,6 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.TreeSet;
 
 public class TestObjectAlignment {
 

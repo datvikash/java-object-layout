@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 public class MainGenerator {
 

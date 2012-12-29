@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class FieldLayout {
+public class ObjectLayout {
 
     private static final Unsafe U;
     private static int ADDRESS_SIZE;
@@ -43,7 +43,7 @@ public class FieldLayout {
     }
 
     public static void storeInstrumentation(Instrumentation inst) {
-        FieldLayout.inst = inst;
+        ObjectLayout.inst = inst;
     }
 
     static class CompressedOopsClass {

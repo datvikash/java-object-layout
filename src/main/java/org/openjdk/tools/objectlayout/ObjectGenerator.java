@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.ClassWriter;
@@ -26,7 +26,7 @@ public class ObjectGenerator implements Opcodes {
     public static void generateClasses() throws Exception {
         PrintStream ps = System.out;
         for (int i = 0; i < 256*256*4; i++) {
-            FieldLayout.analyze(ps, buildClass("Sample" + i, i));
+            ObjectLayout.analyze(ps, buildClass("Sample" + i, i));
             ps.println();
         }
     }

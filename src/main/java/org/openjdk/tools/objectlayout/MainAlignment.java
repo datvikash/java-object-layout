@@ -1,9 +1,9 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 public class MainAlignment {
 
     public static void main(String[] args) throws Exception {
-        FieldLayout.guessAlignment();
+        ObjectLayout.guessAlignment();
     }
 
 }

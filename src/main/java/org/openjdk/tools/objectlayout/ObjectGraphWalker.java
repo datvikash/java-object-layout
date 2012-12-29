@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
@@ -7,7 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-public class ClassWalker {
+public class ObjectGraphWalker {
 
     private final Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
@@ -16,7 +16,7 @@ public class ClassWalker {
     private final Object root;
     private boolean walked;
 
-    public ClassWalker(Object root) {
+    public ObjectGraphWalker(Object root) {
         this.root = root;
     }
 
@@ -75,7 +75,7 @@ public class ClassWalker {
         classCounts.add(klass);
         if (!classSizes.containsKey(klass)) {
             try {
-                classSizes.put(klass, FieldLayout.sizeOf(o));
+                classSizes.put(klass, ObjectLayout.sizeOf(o));
             } catch (Exception e) {
                 classSizes.put(klass, 0);
             }

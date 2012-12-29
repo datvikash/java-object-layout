@@ -1,4 +1,4 @@
-package net.openjdk.tools.fieldlayout;
+package org.openjdk.tools.objectlayout;
 
 import junit.framework.Assert;
 import org.junit.Test;
@@ -7,7 +7,7 @@ public class TestClassWalker {
 
     @Test
     public void testSelfRecursive() {
-        ClassWalker cw = new ClassWalker(new SelfRecursiveSample());
+        ObjectGraphWalker cw = new ObjectGraphWalker(new SelfRecursiveSample());
         Assert.assertEquals(1, cw.getClassCounts().count(SelfRecursiveSample.class));
     }
 
@@ -17,7 +17,7 @@ public class TestClassWalker {
 
     @Test
     public void testAllTypesSample() {
-        ClassWalker cw = new ClassWalker(new AllTypesSample());
+        ObjectGraphWalker cw = new ObjectGraphWalker(new AllTypesSample());
         Assert.assertEquals(1, cw.getClassCounts().count(AllTypesSample.class));
     }
 
@@ -42,17 +42,17 @@ public class TestClassWalker {
 
     @Test
     public void testArraySample() {
-        ClassWalker cw = new ClassWalker(new ArraySample());
+        ObjectGraphWalker cw = new ObjectGraphWalker(new ArraySample());
         Assert.assertEquals(1, cw.getClassCounts().count(ArraySample.class));
         Assert.assertEquals(1, cw.getClassCounts().count(boolean[].class));
-        Assert.assertTrue(cw.getClassSizes().get(boolean[].class)   > 245*FieldLayout.sizeOfType(boolean.class));
-        Assert.assertTrue(cw.getClassSizes().get(byte[].class)      > 245*FieldLayout.sizeOfType(byte.class));
-        Assert.assertTrue(cw.getClassSizes().get(short[].class)     > 245*FieldLayout.sizeOfType(short.class));
-        Assert.assertTrue(cw.getClassSizes().get(char[].class)      > 245*FieldLayout.sizeOfType(char.class));
-        Assert.assertTrue(cw.getClassSizes().get(int[].class)       > 245*FieldLayout.sizeOfType(int.class));
-        Assert.assertTrue(cw.getClassSizes().get(long[].class)      > 245*FieldLayout.sizeOfType(long.class));
-        Assert.assertTrue(cw.getClassSizes().get(double[].class)    > 245*FieldLayout.sizeOfType(double.class));
-        Assert.assertTrue(cw.getClassSizes().get(float[].class)     > 245*FieldLayout.sizeOfType(float.class));
+        Assert.assertTrue(cw.getClassSizes().get(boolean[].class)   > 245* ObjectLayout.sizeOfType(boolean.class));
+        Assert.assertTrue(cw.getClassSizes().get(byte[].class)      > 245* ObjectLayout.sizeOfType(byte.class));
+        Assert.assertTrue(cw.getClassSizes().get(short[].class)     > 245* ObjectLayout.sizeOfType(short.class));
+        Assert.assertTrue(cw.getClassSizes().get(char[].class)      > 245* ObjectLayout.sizeOfType(char.class));
+        Assert.assertTrue(cw.getClassSizes().get(int[].class)       > 245* ObjectLayout.sizeOfType(int.class));
+        Assert.assertTrue(cw.getClassSizes().get(long[].class)      > 245* ObjectLayout.sizeOfType(long.class));
+        Assert.assertTrue(cw.getClassSizes().get(double[].class)    > 245* ObjectLayout.sizeOfType(double.class));
+        Assert.assertTrue(cw.getClassSizes().get(float[].class)     > 245* ObjectLayout.sizeOfType(float.class));
     }
 
     public static class ArraySample {
