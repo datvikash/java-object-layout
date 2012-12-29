@@ -1,11 +1,14 @@
 package net.openjdk.tools.fieldlayout;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import sun.misc.Unsafe;
 
 import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -52,6 +55,89 @@ public class FieldLayout {
         analyze(System.out, klass);
     }
 
+    public static void guessAlignment() {
+        final int COUNT = 10_000_000;
+        Object[] array = new Object[COUNT];
+        long[] newOffsets = new long[COUNT];
+        long[] oldOffsets = new long[COUNT];
+        long baseOffset = U.arrayBaseOffset(Object[].class);
+        int scale = U.arrayIndexScale(Object[].class);
+
+
+        for (int c = 0; c < COUNT; c++) {
+            array[c] = new Object();
+            newOffsets[c] = U.getInt(array, baseOffset + scale*c);
+        }
+
+        System.gc();
+
+        for (int c = 0; c < COUNT; c++) {
+            oldOffsets[c] = U.getInt(array, baseOffset + scale*c);
+        }
+
+        Arrays.sort(oldOffsets);
+        Arrays.sort(newOffsets);
+
+        Multiset<Long> oldSizes = HashMultiset.create();
+        Multiset<Long> newSizes = HashMultiset.create();
+        for (int c = 1; c < COUNT; c++) {
+            newSizes.add(newOffsets[c] - newOffsets[c - 1]);
+            oldSizes.add(oldOffsets[c] - oldOffsets[c - 1]);
+        }
+
+        System.err.println(newSizes);
+//        System.err.println(oldSizes);
+    }
+
+    public static int sizeOf(Object o) throws Exception {
+        if (inst != null) {
+            return (int) inst.getObjectSize(o);
+        }
+
+        if (o.getClass().isArray()) {
+            return sizeOfArray(o);
+        }
+
+        SortedSet<FieldInfo> set = new TreeSet<>();
+
+        Class<?> klass = o.getClass();
+        for (Field f : klass.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) {
+                set.add(new FieldInfo(klass, f));
+            }
+        }
+
+        Class<?> superKlass = klass;
+        while ((superKlass = superKlass.getSuperclass()) != null) {
+            for (Field f : superKlass.getDeclaredFields()) {
+                if (!Modifier.isStatic(f.getModifiers())) {
+                    set.add(new FieldInfo(superKlass, f));
+                }
+            }
+        }
+
+        if (!set.isEmpty()) {
+            return set.last().offset + set.last().getSize();
+        } else {
+            return HEADER_SIZE;
+        }
+    }
+
+    private static int sizeOfArray(Object o) {
+        int base = U.arrayBaseOffset(o.getClass());
+        int scale = U.arrayIndexScale(o.getClass());
+        Class<?> type = o.getClass().getComponentType();
+        if (type == boolean.class)  return base + ((boolean[])o).length * scale;
+        if (type == byte.class)     return base + ((byte[])o).length    * scale;
+        if (type == short.class)    return base + ((short[])o).length   * scale;
+        if (type == char.class)     return base + ((char[])o).length    * scale;
+        if (type == int.class)      return base + ((int[])o).length     * scale;
+        if (type == float.class)    return base + ((float[])o).length   * scale;
+        if (type == long.class)     return base + ((long[])o).length    * scale;
+        if (type == double.class)   return base + ((double[])o).length  * scale;
+        return base + ((Object[])o).length  * scale;
+    }
+
     public static void analyze(PrintStream pw, Class klass) throws Exception {
         SortedSet<FieldInfo> set = new TreeSet<>();
 
@@ -96,6 +182,18 @@ public class FieldLayout {
         }
     }
 
+    public static int sizeOfType(Class<?> type) {
+        if (type == byte.class)    { return 1; }
+        if (type == boolean.class) { return 1; }
+        if (type == short.class)   { return 2; }
+        if (type == char.class)    { return 2; }
+        if (type == int.class)     { return 4; }
+        if (type == float.class)   { return 4; }
+        if (type == long.class)    { return 8; }
+        if (type == double.class)  { return 8; }
+        return ADDRESS_SIZE;
+    }
+
     public static class FieldInfo implements Comparable<FieldInfo> {
 
         private final String name;
@@ -122,15 +220,7 @@ public class FieldLayout {
         }
 
         public int getSize() {
-            if (type == byte.class)    { return 1; }
-            if (type == boolean.class) { return 1; }
-            if (type == short.class)   { return 2; }
-            if (type == char.class)    { return 2; }
-            if (type == int.class)     { return 4; }
-            if (type == float.class)   { return 4; }
-            if (type == long.class)    { return 8; }
-            if (type == double.class)  { return 8; }
-            return ADDRESS_SIZE;
+            return sizeOfType(type);
         }
 
         public String getType() {
