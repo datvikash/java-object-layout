@@ -8,17 +8,18 @@ Prepare:
 
 Dump the fields of some class:
   $ java -jar target/java-object-layout.jar java.util.HashMap
-        java.util.HashMap
-         offset  size            type field
-              0    12                 (header)
-             12     4             Set AbstractMap.keySet
-             16     4      Collection AbstractMap.values
-             20     4             int HashMap.size
-             24     4             int HashMap.threshold
-             28     4           float HashMap.loadFactor
-             32     4             int HashMap.modCount
-             36     4             int HashMap.hashSeed
-             40     4         Entry[] HashMap.table
-             44     4             Set HashMap.entrySet
-             48                       (object boundary, size estimate)
-        VM reports 48 bytes per instance
+      java.util.HashMap
+       offset  size            type description
+            0    16                 (assumed to be the object header)
+           16     8             Set AbstractMap.keySet
+           24     8      Collection AbstractMap.values
+           32     4             int HashMap.size
+           36     4             int HashMap.threshold
+           40     4           float HashMap.loadFactor
+           44     4             int HashMap.modCount
+           48     4             int HashMap.hashSeed
+           56     4                 (alignment/padding gap)
+           56     8         Entry[] HashMap.table
+           64     8             Set HashMap.entrySet
+           72                       (object boundary, size estimate)
+      VM reports 72 bytes per instance

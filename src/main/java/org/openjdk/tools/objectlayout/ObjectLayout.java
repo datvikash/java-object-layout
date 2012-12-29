@@ -158,8 +158,8 @@ public class ObjectLayout {
 
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
-        pw.printf(" %6s %5s %15s %s\n", "offset", "size", "type", "field");
-        pw.printf(" %6d %5d %15s %s\n", 0, HEADER_SIZE, "", "(header)");
+        pw.printf(" %6s %5s %15s %s\n", "offset", "size", "type", "description");
+        pw.printf(" %6d %5d %15s %s\n", 0, HEADER_SIZE, "", "(assumed to be the object header)");
         nextFree += HEADER_SIZE;
 
         for (FieldInfo f : set) {
