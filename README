@@ -31,7 +31,7 @@ Traverse the reachability graph and count instances and their sizes
 (this should be more convenient to use once we publish the Maven artifact):
   $ java -jar target/java-object-graph.jar java.util.HashMap
       java.util.HashMap instance:
-       count  size total description
-            1    48    48 java.util.HashMap
+        count  size   avg description
             1    80    80 [Ljava.util.HashMap$Entry;
-            2   128   128 (total)
+            1    48    48 java.util.HashMap
+            2   128       (total)

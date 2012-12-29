@@ -11,7 +11,7 @@ public class ObjectGraphWalker {
 
     private final Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
-    private final Map<Class<?>, Integer> classSizes = new HashMap<>();
+    private final Multiset<Class<?>> classSizes = HashMultiset.create();
     private final Multiset<Class<?>> classCounts = HashMultiset.create();
     private final Object root;
     private boolean walked;
@@ -73,16 +73,14 @@ public class ObjectGraphWalker {
     private void visitObject(Object o) {
         Class<?> klass = o.getClass();
         classCounts.add(klass);
-        if (!classSizes.containsKey(klass)) {
-            try {
-                classSizes.put(klass, ObjectLayout.sizeOf(o));
-            } catch (Exception e) {
-                classSizes.put(klass, 0);
-            }
+        try {
+            classSizes.add(klass, ObjectLayout.sizeOf(o));
+        } catch (Exception e) {
+            classSizes.add(klass, 0);
         }
     }
 
-    public Map<Class<?>, Integer> getClassSizes() {
+    public Multiset<Class<?>> getClassSizes() {
         walk();
         return classSizes;
     }
@@ -90,16 +88,5 @@ public class ObjectGraphWalker {
     public Multiset<Class<?>> getClassCounts() {
         walk();
         return classCounts;
-    }
-
-    public int getTotalSize() {
-        walk();
-
-        int totalSize = 0;
-        for (Multiset.Entry<Class<?>> entry : classCounts.entrySet()) {
-            Integer size = classSizes.get(entry.getElement());
-            totalSize += size * entry.getCount();
-        }
-        return totalSize;
     }
 }
