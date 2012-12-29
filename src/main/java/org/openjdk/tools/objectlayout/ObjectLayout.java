@@ -158,27 +158,29 @@ public class ObjectLayout {
 
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
-        pw.printf("   (header %d bytes)\n", HEADER_SIZE);
+        pw.printf(" %6s %5s %15s %s\n", "offset", "size", "type", "field");
+        pw.printf(" %6d %5d %15s %s\n", 0, HEADER_SIZE, "", "(header)");
         nextFree += HEADER_SIZE;
 
         for (FieldInfo f : set) {
             if (f.offset > nextFree) {
-                pw.printf("   (gap %d bytes)\n", (f.offset - nextFree));
+                pw.printf(" %6d %5d %15s %s\n", f.offset, (f.offset - nextFree), "", "(alignment/padding gap)");
             }
-            pw.printf(" %3d %3d %15s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
+            pw.printf(" %6d %5d %15s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
 
             nextFree = f.offset + f.getSize();
         }
+        pw.printf(" %6d %5s %15s %s\n", nextFree, "", "", "(object boundary, size estimate)");
 
         if (inst != null) {
             try {
                 Object i = klass.newInstance();
-                pw.println("Instrumentation reports " + inst.getObjectSize(i) + " bytes per instance");
+                pw.println("VM reports " + inst.getObjectSize(i) + " bytes per instance");
             } catch (InstantiationException e) {
-                pw.println("Instrumentation fails to invoke default constructor (does object have one?)");
+                pw.println("VM fails to invoke default constructor (does object have one?)");
             }
         } else {
-            pw.println("Instrumentation is not enabled, use -javaagent: to add this JAR as Java agent");
+            pw.println("VM agent is not enabled, use -javaagent: to add this JAR as Java agent");
         }
     }
 

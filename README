@@ -7,17 +7,18 @@ Prepare:
   $ mvn clean install
 
 Dump the fields of some class:
-  $ java -jar target/field-layout.jar java.util.HashMap
+  $ java -jar target/java-object-layout.jar java.util.HashMap
         java.util.HashMap
-           (header 12 bytes)
-          12   4             Set AbstractMap.keySet
-          16   4      Collection AbstractMap.values
-          20   4             int HashMap.size
-          24   4             int HashMap.threshold
-          28   4           float HashMap.loadFactor
-          32   4             int HashMap.modCount
-          36   4             int HashMap.hashSeed
-          40   1         boolean HashMap.useAltHashing
-           (gap 3 bytes)
-          44   4         Entry[] HashMap.table
-          48   4             Set HashMap.entrySet
+         offset  size            type field
+              0    12                 (header)
+             12     4             Set AbstractMap.keySet
+             16     4      Collection AbstractMap.values
+             20     4             int HashMap.size
+             24     4             int HashMap.threshold
+             28     4           float HashMap.loadFactor
+             32     4             int HashMap.modCount
+             36     4             int HashMap.hashSeed
+             40     4         Entry[] HashMap.table
+             44     4             Set HashMap.entrySet
+             48                       (object boundary, size estimate)
+        VM reports 48 bytes per instance
