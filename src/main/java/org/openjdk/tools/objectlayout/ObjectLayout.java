@@ -164,7 +164,7 @@ public class ObjectLayout {
 
         for (FieldInfo f : set) {
             if (f.offset > nextFree) {
-                pw.printf(" %6d %5d %15s %s\n", f.offset, (f.offset - nextFree), "", "(alignment/padding gap)");
+                pw.printf(" %6d %5d %15s %s\n", nextFree, (f.offset - nextFree), "", "(alignment/padding gap)");
             }
             pw.printf(" %6d %5d %15s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
 

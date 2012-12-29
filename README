@@ -21,7 +21,7 @@ Dump the fields of some class:
            40     4           float HashMap.loadFactor
            44     4             int HashMap.modCount
            48     4             int HashMap.hashSeed
-           56     4                 (alignment/padding gap)
+           52     4                 (alignment/padding gap)
            56     8         Entry[] HashMap.table
            64     8             Set HashMap.entrySet
            72                       (object boundary, size estimate)
