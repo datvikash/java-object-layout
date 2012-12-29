@@ -1,7 +1,7 @@
 Java Object Layout Dumpers
 ---------------------------------------------------------------------
 
-These are the very tiny tools to analyze field layout schemes in JVM.
+These are the very tiny tools to analyze object layout schemes in JVMs.
 These tools are using Unsafe heavily to deduce the *actual* object
 layout and footprint. This makes the tools much more accurate than
 others relying on heap dumps, specification assumptions, etc.
@@ -32,6 +32,6 @@ Traverse the reachability graph and count instances and their sizes
   $ java -jar target/java-object-graph.jar java.util.HashMap
       java.util.HashMap instance:
         count  size   avg description
-            1    80    80 [Ljava.util.HashMap$Entry;
-            1    48    48 java.util.HashMap
-            2   128       (total)
+            1    72    72 java.util.HashMap
+            1   152   152 [Ljava.util.HashMap$Entry;
+            2   224       (total)
