@@ -13,7 +13,7 @@ public class MainObjectGraph {
     }
 
     public static void premain(String agentArgs, Instrumentation inst) {
-        ObjectLayout.storeInstrumentation(inst);
+        VMSupport.storeInstrumentation(inst);
     }
 
 }

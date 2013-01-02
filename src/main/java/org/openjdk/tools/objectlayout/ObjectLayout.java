@@ -1,101 +1,26 @@
 package org.openjdk.tools.objectlayout;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
-import sun.misc.Unsafe;
+import sun.misc.VM;
 
 import java.io.PrintStream;
-import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class ObjectLayout {
 
-    private static final Unsafe U;
-    private static int ADDRESS_SIZE;
-    private static int HEADER_SIZE;
-    private static Instrumentation inst;
-
-    static {
-        // steal Unsafe
-        try {
-            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafe.setAccessible(true);
-            U = (Unsafe) unsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-
-        // When running with CompressedOops on 64-bit platform, the address size
-        // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
-        // Try to guess the reference field size with this naive trick.
-        try {
-            long off1 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
-            long off2 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
-            ADDRESS_SIZE = (int) Math.abs(off2 - off1);
-            HEADER_SIZE = (int) Math.min(off1, off2);
-        } catch (NoSuchFieldException e) {
-            ADDRESS_SIZE = -1;
-        }
-    }
-
-    public static void storeInstrumentation(Instrumentation inst) {
-        ObjectLayout.inst = inst;
-    }
-
-    static class CompressedOopsClass {
-        public Object obj1;
-        public Object obj2;
-    }
-
     public static void analyze(Class klass) throws Exception {
         analyze(System.out, klass);
     }
 
-    public static void guessAlignment() {
-        final int COUNT = 10_000_000;
-        Object[] array = new Object[COUNT];
-        long[] newOffsets = new long[COUNT];
-        long[] oldOffsets = new long[COUNT];
-        long baseOffset = U.arrayBaseOffset(Object[].class);
-        int scale = U.arrayIndexScale(Object[].class);
-
-
-        for (int c = 0; c < COUNT; c++) {
-            array[c] = new Object();
-            newOffsets[c] = U.getInt(array, baseOffset + scale*c);
-        }
-
-        System.gc();
-
-        for (int c = 0; c < COUNT; c++) {
-            oldOffsets[c] = U.getInt(array, baseOffset + scale*c);
-        }
-
-        Arrays.sort(oldOffsets);
-        Arrays.sort(newOffsets);
-
-        Multiset<Long> oldSizes = HashMultiset.create();
-        Multiset<Long> newSizes = HashMultiset.create();
-        for (int c = 1; c < COUNT; c++) {
-            newSizes.add(newOffsets[c] - newOffsets[c - 1]);
-            oldSizes.add(oldOffsets[c] - oldOffsets[c - 1]);
-        }
-
-        System.err.println(newSizes);
-//        System.err.println(oldSizes);
-    }
-
     public static int sizeOf(Object o) throws Exception {
-        if (inst != null) {
-            return (int) inst.getObjectSize(o);
+        if (VMSupport.INSTRUMENTATION != null) {
+            return align((int) VMSupport.INSTRUMENTATION.getObjectSize(o), VMSupport.OBJECT_ALIGNMENT);
         }
 
         if (o.getClass().isArray()) {
-            return sizeOfArray(o);
+            return align(sizeOfArray(o), VMSupport.OBJECT_ALIGNMENT);
         }
 
         SortedSet<FieldInfo> set = new TreeSet<>();
@@ -117,15 +42,15 @@ public class ObjectLayout {
         }
 
         if (!set.isEmpty()) {
-            return set.last().offset + set.last().getSize();
+            return align(set.last().offset + set.last().getSize(), VMSupport.OBJECT_ALIGNMENT);
         } else {
-            return HEADER_SIZE;
+            return align(VMSupport.HEADER_SIZE, VMSupport.OBJECT_ALIGNMENT);
         }
     }
 
     private static int sizeOfArray(Object o) {
-        int base = U.arrayBaseOffset(o.getClass());
-        int scale = U.arrayIndexScale(o.getClass());
+        int base = VMSupport.U.arrayBaseOffset(o.getClass());
+        int scale = VMSupport.U.arrayIndexScale(o.getClass());
         Class<?> type = o.getClass().getComponentType();
         if (type == boolean.class)  return base + ((boolean[])o).length * scale;
         if (type == byte.class)     return base + ((byte[])o).length    * scale;
@@ -135,7 +60,7 @@ public class ObjectLayout {
         if (type == float.class)    return base + ((float[])o).length   * scale;
         if (type == long.class)     return base + ((long[])o).length    * scale;
         if (type == double.class)   return base + ((double[])o).length  * scale;
-        return base + ((Object[])o).length  * scale;
+        return align(base + ((Object[])o).length  * scale, VMSupport.OBJECT_ALIGNMENT);
     }
 
     public static void analyze(PrintStream pw, Class klass) throws Exception {
@@ -159,8 +84,8 @@ public class ObjectLayout {
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
         pw.printf(" %6s %5s %15s %s\n", "offset", "size", "type", "description");
-        pw.printf(" %6d %5d %15s %s\n", 0, HEADER_SIZE, "", "(assumed to be the object header)");
-        nextFree += HEADER_SIZE;
+        pw.printf(" %6d %5d %15s %s\n", 0, VMSupport.HEADER_SIZE, "", "(assumed to be the object header)");
+        nextFree += VMSupport.HEADER_SIZE;
 
         for (FieldInfo f : set) {
             if (f.offset > nextFree) {
@@ -170,17 +95,29 @@ public class ObjectLayout {
 
             nextFree = f.offset + f.getSize();
         }
-        pw.printf(" %6d %5s %15s %s\n", nextFree, "", "", "(object boundary, size estimate)");
+        int aligned = align(nextFree, VMSupport.OBJECT_ALIGNMENT);
+        if (aligned != nextFree) {
+            pw.printf(" %6d %5s %15s %s\n", aligned, aligned - nextFree, "", "(loss due to the object alignment)");
+        }
+        pw.printf(" %6d %5s %15s %s\n", aligned, "", "", "(object boundary, size estimate)");
 
-        if (inst != null) {
+        if (VMSupport.INSTRUMENTATION != null) {
             try {
                 Object i = klass.newInstance();
-                pw.println("VM reports " + inst.getObjectSize(i) + " bytes per instance");
+                pw.println("VM reports " + VMSupport.INSTRUMENTATION.getObjectSize(i) + " bytes per instance");
             } catch (InstantiationException e) {
                 pw.println("VM fails to invoke default constructor (does object have one?)");
             }
         } else {
             pw.println("VM agent is not enabled, use -javaagent: to add this JAR as Java agent");
+        }
+    }
+
+    public static int align(int addr, int align) {
+        if ((addr % align) == 0) {
+            return addr;
+        } else {
+            return ((addr / align) + 1) * align;
         }
     }
 
@@ -193,7 +130,7 @@ public class ObjectLayout {
         if (type == float.class)   { return 4; }
         if (type == long.class)    { return 8; }
         if (type == double.class)  { return 8; }
-        return ADDRESS_SIZE;
+        return VMSupport.OOP_SIZE;
     }
 
     public static class FieldInfo implements Comparable<FieldInfo> {
@@ -210,9 +147,9 @@ public class ObjectLayout {
             type = field.getType();
             aStatic = Modifier.isStatic(field.getModifiers());
             if (aStatic) {
-                offset = (int) U.staticFieldOffset(field);
+                offset = (int) VMSupport.U.staticFieldOffset(field);
             } else {
-                offset = (int) U.objectFieldOffset(field);
+                offset = (int) VMSupport.U.objectFieldOffset(field);
             }
         }
 

@@ -81,22 +81,6 @@
                             </transformers>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>guess-alignment</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>guess-alignment</finalName>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.openjdk.tools.objectlayout.MainAlignment</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
         </plugins>
