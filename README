@@ -11,27 +11,33 @@ Prepare:
 
 Dump the fields of some class:
   $ java -jar target/java-object-layout.jar java.util.HashMap
-      java.util.HashMap
-       offset  size            type description
-            0    16                 (assumed to be the object header)
-           16     8             Set AbstractMap.keySet
-           24     8      Collection AbstractMap.values
-           32     4             int HashMap.size
-           36     4             int HashMap.threshold
-           40     4           float HashMap.loadFactor
-           44     4             int HashMap.modCount
-           48     4             int HashMap.hashSeed
-           52     4                 (alignment/padding gap)
-           56     8         Entry[] HashMap.table
-           64     8             Set HashMap.entrySet
-           72                       (object boundary, size estimate)
-      VM reports 72 bytes per instance
+     Running 64-bit VM, using compressed references, objects are 8 bytes aligned.
+
+     java.util.HashMap
+      offset  size       type description
+           0    12            (assumed to be the object header + first field alignment)
+          12     4        Set AbstractMap.keySet
+          16     4 Collection AbstractMap.values
+          20     4        int HashMap.size
+          24     4        int HashMap.threshold
+          28     4      float HashMap.loadFactor
+          32     4        int HashMap.modCount
+          36     4        int HashMap.hashSeed
+          40     1    boolean HashMap.useAltHashing
+          41     3            (alignment/padding gap)
+          44     4    Entry[] HashMap.table
+          48     4        Set HashMap.entrySet
+          52     4            (loss due to the next object alignment)
+          56                  (object boundary, size estimate)
+      VM reports 56 bytes per instance
 
 Traverse the reachability graph and count instances and their sizes
 (this should be more convenient to use once we publish the Maven artifact):
   $ java -jar target/java-object-graph.jar java.util.HashMap
-      java.util.HashMap instance:
-        count  size   avg description
-            1    72    72 java.util.HashMap
-            1   152   152 [Ljava.util.HashMap$Entry;
-            2   224       (total)
+     Running 64-bit VM, using compressed references, objects are 8 bytes aligned.
+
+     java.util.HashMap instance:
+      count  size   avg description
+          1    80    80 [Ljava.util.HashMap$Entry;
+          1    56    56 java.util.HashMap
+          2   136       (total)
