@@ -61,9 +61,14 @@ public class VMSupport {
             long off1 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
             long off2 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
             oopSize = (int) Math.abs(off2 - off1);
-            headerSize = (int) Math.min(off1, off2);
         } catch (NoSuchFieldException e) {
             oopSize = -1;
+        }
+
+        try {
+            long off1 = U.objectFieldOffset(HeaderClass.class.getField("b1"));
+            headerSize = (int) off1;
+        } catch (NoSuchFieldException e) {
             headerSize = -1;
         }
 
@@ -114,6 +119,10 @@ public class VMSupport {
     static class CompressedOopsClass {
         public Object obj1;
         public Object obj2;
+    }
+
+    static class HeaderClass {
+        public boolean b1;
     }
 
     public static int guessAlignment() {

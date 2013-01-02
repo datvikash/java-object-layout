@@ -89,7 +89,7 @@ public class ObjectLayout {
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
         pw.printf(" %6s %5s %" + maxLength + "s %s\n", "offset", "size", "type", "description");
-        pw.printf(" %6d %5d %" + maxLength + "s %s\n", 0, VMSupport.HEADER_SIZE, "", "(assumed to be the object header)");
+        pw.printf(" %6d %5d %" + maxLength + "s %s\n", 0, VMSupport.HEADER_SIZE, "", "(assumed to be the object header + first field alignment)");
         nextFree += VMSupport.HEADER_SIZE;
 
         for (FieldInfo f : set) {
@@ -102,7 +102,7 @@ public class ObjectLayout {
         }
         int aligned = align(nextFree, VMSupport.OBJECT_ALIGNMENT);
         if (aligned != nextFree) {
-            pw.printf(" %6d %5s %" + maxLength + "s %s\n", aligned, aligned - nextFree, "", "(loss due to the object alignment)");
+            pw.printf(" %6d %5s %" + maxLength + "s %s\n", nextFree, aligned - nextFree, "", "(loss due to the next object alignment)");
         }
         pw.printf(" %6d %5s %" + maxLength + "s %s\n", aligned, "", "", "(object boundary, size estimate)");
 
