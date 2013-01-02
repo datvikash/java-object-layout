@@ -17,8 +17,4 @@ public class MainAnalyzer {
         ObjectLayout.analyze(out, Class.forName(args[0]));
     }
 
-    public static void premain(String agentArgs, Instrumentation inst) {
-        VMSupport.storeInstrumentation(inst);
-    }
-
 }

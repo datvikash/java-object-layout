@@ -40,7 +40,7 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.tools.objectlayout.MainAnalyzer</mainClass>
                                     <manifestEntries>
-                                        <Premain-Class>org.openjdk.tools.objectlayout.MainAnalyzer</Premain-Class>
+                                        <Premain-Class>org.openjdk.tools.objectlayout.VMSupport</Premain-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
@@ -59,7 +59,7 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.tools.objectlayout.MainObjectGraph</mainClass>
                                     <manifestEntries>
-                                        <Premain-Class>org.openjdk.tools.objectlayout.MainObjectGraph</Premain-Class>
+                                        <Premain-Class>org.openjdk.tools.objectlayout.VMSupport</Premain-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
@@ -77,6 +77,9 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.tools.objectlayout.MainGenerator</mainClass>
+                                    <manifestEntries>
+                                        <Premain-Class>org.openjdk.tools.objectlayout.VMSupport</Premain-Class>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                         </configuration>

@@ -214,4 +214,9 @@ public class VMSupport {
         if (type == double.class) return base + ((double[]) o).length * scale;
         return base + ((Object[]) o).length * scale;
     }
+
+    public static void premain(String agentArgs, Instrumentation inst) {
+        VMSupport.storeInstrumentation(inst);
+    }
+
 }
