@@ -13,17 +13,8 @@ public class MainAnalyzer {
 
         PrintStream out = System.out;
 
-        out.print("Running " + (VMSupport.ADDRESS_SIZE*8) + "-bit VM, ");
-        if (VMSupport.ADDRESS_SIZE != VMSupport.OOP_SIZE) {
-            out.println("compressed pointers.");
-            out.println("Objects seem to be " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned (speculated).");
-        } else {
-            out.println("full-width pointers.");
-            out.println("Objects seem to be " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned.");
-        }
-        out.println();
-
-        ObjectLayout.analyze(System.out, Class.forName(args[0]));
+        VMSupport.detect(out);
+        ObjectLayout.analyze(out, Class.forName(args[0]));
     }
 
     public static void premain(String agentArgs, Instrumentation inst) {

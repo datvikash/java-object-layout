@@ -9,6 +9,7 @@ public class MainObjectGraph {
             System.err.println("Usage: java-object-graph.jar [class-name]");
             System.exit(1);
         }
+        VMSupport.detect(System.out);
         ObjectGraph.analyze(System.out, Class.forName(args[0]));
     }
 

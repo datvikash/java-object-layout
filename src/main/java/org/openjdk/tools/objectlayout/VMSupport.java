@@ -2,9 +2,13 @@ package org.openjdk.tools.objectlayout;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.sun.management.HotSpotDiagnosticMXBean;
 import sun.misc.Unsafe;
 
+import javax.management.MBeanServer;
+import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +22,24 @@ public class VMSupport {
     public final static int OOP_SIZE;
     public final static int HEADER_SIZE;
     public final static int OBJECT_ALIGNMENT;
+
+    private static final String HOTSPOT_BEAN_NAME =
+            "com.sun.management:type=HotSpotDiagnostic";
+
+    private static HotSpotDiagnosticMXBean getHotspotMBean() {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            return ManagementFactory.newPlatformMXBeanProxy(server,
+                    HOTSPOT_BEAN_NAME, HotSpotDiagnosticMXBean.class);
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception exp) {
+            throw new RuntimeException(exp);
+        }
+    }
+
+    private static boolean autoCompressedOops;
+    private static boolean autoObjectAlignment;
 
     static {
         // steal Unsafe
@@ -46,18 +68,47 @@ public class VMSupport {
         }
 
         ADDRESS_SIZE = U.addressSize();
-        OOP_SIZE = oopSize;
         HEADER_SIZE = headerSize;
 
-        if (VMSupport.ADDRESS_SIZE != VMSupport.OOP_SIZE) {
-            OBJECT_ALIGNMENT = guessAlignment() * 8; // assume compressed oops are << 3, FIXME: figure out!
-        } else {
-            OBJECT_ALIGNMENT = guessAlignment();
+        try {
+            HotSpotDiagnosticMXBean mBean = getHotspotMBean();
+            oopSize = Boolean.valueOf(mBean.getVMOption("UseCompressedOops").getValue()) ? 4 : 8;
+        } catch (Exception e) {
+            // not the hotspot, or 32-bit version, falling back
+            autoCompressedOops = true;
         }
+        OOP_SIZE = oopSize;
+
+        int alignment;
+        try {
+            HotSpotDiagnosticMXBean mBean = getHotspotMBean();
+            alignment = Integer.valueOf(mBean.getVMOption("ObjectAlignmentInBytes").getValue());
+        } catch (Exception e) {
+            // not the hotspot? falling back
+            if (VMSupport.ADDRESS_SIZE != VMSupport.OOP_SIZE) {
+                alignment = guessAlignment() * 8; // assume compressed oops are << 3
+            } else {
+                alignment = guessAlignment();
+            }
+            autoObjectAlignment = true;
+        }
+        OBJECT_ALIGNMENT = alignment;
+
     }
 
     public static void storeInstrumentation(Instrumentation inst) {
         VMSupport.INSTRUMENTATION = inst;
+    }
+
+    public static void detect(PrintStream out) {
+        out.print("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit VM, ");
+        if (OOP_SIZE != ADDRESS_SIZE) {
+            out.print("using compressed references" +
+                    (autoCompressedOops ? "(automatically guessed, can be unreliable), " : ", "));
+        }
+        out.println("objects are " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned" +
+                (autoObjectAlignment ? " (automatically guessed, can be unreliable)." : "."));
+        out.println();
     }
 
     static class CompressedOopsClass {
