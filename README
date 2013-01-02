@@ -15,7 +15,7 @@ Dump the fields of some class:
 
      java.util.HashMap
       offset  size       type description
-           0    12            (assumed to be the object header + first field alignment)
+           0    12            (object header + first field alignment)
           12     4        Set AbstractMap.keySet
           16     4 Collection AbstractMap.values
           20     4        int HashMap.size
