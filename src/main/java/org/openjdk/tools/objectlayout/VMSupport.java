@@ -47,7 +47,9 @@ public class VMSupport {
             Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
             unsafe.setAccessible(true);
             U = (Unsafe) unsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException e) {
+            throw new IllegalStateException(e);
+        } catch (IllegalAccessException e) {
             throw new IllegalStateException(e);
         }
 
@@ -126,7 +128,7 @@ public class VMSupport {
     }
 
     public static int guessAlignment() {
-        final int COUNT = 1_000_000;
+        final int COUNT = 1000*1000;
         Object[] array = new Object[COUNT];
         long[] offsets = new long[COUNT];
 

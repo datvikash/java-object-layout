@@ -1,7 +1,5 @@
 package org.openjdk.tools.objectlayout;
 
-import sun.misc.VM;
-
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,7 +21,7 @@ public class ObjectLayout {
             return align(sizeOfArray(o), VMSupport.OBJECT_ALIGNMENT);
         }
 
-        SortedSet<FieldInfo> set = new TreeSet<>();
+        SortedSet<FieldInfo> set = new TreeSet<FieldInfo>();
 
         Class<?> klass = o.getClass();
         for (Field f : klass.getDeclaredFields()) {
@@ -64,7 +62,7 @@ public class ObjectLayout {
     }
 
     public static void analyze(PrintStream pw, Class klass) throws Exception {
-        SortedSet<FieldInfo> set = new TreeSet<>();
+        SortedSet<FieldInfo> set = new TreeSet<FieldInfo>();
 
         for (Field f : klass.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
@@ -160,7 +158,7 @@ public class ObjectLayout {
 
         @Override
         public int compareTo(FieldInfo o) {
-            return Integer.compare(offset, o.offset);
+            return (offset < o.offset) ? -1 : ((offset == o.offset) ? 0 : 1);
         }
 
         public int getSize() {

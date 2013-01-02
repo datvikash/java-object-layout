@@ -24,8 +24,8 @@ public class ObjectGraphWalker {
         if (walked) return;
         walked = true;
 
-        List<Object> curLayer = new ArrayList<>();
-        List<Object> newLayer = new ArrayList<>();
+        List<Object> curLayer = new ArrayList<Object>();
+        List<Object> newLayer = new ArrayList<Object>();
 
         visitObject(root);
         visited.add(root);
@@ -49,7 +49,7 @@ public class ObjectGraphWalker {
     }
 
     private List<Object> peelReferences(Object o) {
-        List<Object> result = new ArrayList<>();
+        List<Object> result = new ArrayList<Object>();
 
         if (o.getClass().isArray() && !o.getClass().getComponentType().isPrimitive()) {
             result.addAll(Arrays.asList((Object[])o));
