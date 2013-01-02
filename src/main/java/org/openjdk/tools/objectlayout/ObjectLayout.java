@@ -81,25 +81,30 @@ public class ObjectLayout {
             }
         }
 
+        int maxLength = 1;
+        for (FieldInfo f : set) {
+            maxLength = Math.max(f.getType().length(), maxLength);
+        }
+
         int nextFree = 0;
         pw.println(klass.getCanonicalName());
-        pw.printf(" %6s %5s %15s %s\n", "offset", "size", "type", "description");
-        pw.printf(" %6d %5d %15s %s\n", 0, VMSupport.HEADER_SIZE, "", "(assumed to be the object header)");
+        pw.printf(" %6s %5s %" + maxLength + "s %s\n", "offset", "size", "type", "description");
+        pw.printf(" %6d %5d %" + maxLength + "s %s\n", 0, VMSupport.HEADER_SIZE, "", "(assumed to be the object header)");
         nextFree += VMSupport.HEADER_SIZE;
 
         for (FieldInfo f : set) {
             if (f.offset > nextFree) {
-                pw.printf(" %6d %5d %15s %s\n", nextFree, (f.offset - nextFree), "", "(alignment/padding gap)");
+                pw.printf(" %6d %5d %" + maxLength + "s %s\n", nextFree, (f.offset - nextFree), "", "(alignment/padding gap)");
             }
-            pw.printf(" %6d %5d %15s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
+            pw.printf(" %6d %5d %" + maxLength + "s %s\n", f.offset, f.getSize(), f.getType(), f.getHostClass() + "." + f.name);
 
             nextFree = f.offset + f.getSize();
         }
         int aligned = align(nextFree, VMSupport.OBJECT_ALIGNMENT);
         if (aligned != nextFree) {
-            pw.printf(" %6d %5s %15s %s\n", aligned, aligned - nextFree, "", "(loss due to the object alignment)");
+            pw.printf(" %6d %5s %" + maxLength + "s %s\n", aligned, aligned - nextFree, "", "(loss due to the object alignment)");
         }
-        pw.printf(" %6d %5s %15s %s\n", aligned, "", "", "(object boundary, size estimate)");
+        pw.printf(" %6d %5s %" + maxLength + "s %s\n", aligned, "", "", "(object boundary, size estimate)");
 
         if (VMSupport.INSTRUMENTATION != null) {
             try {
