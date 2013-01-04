@@ -80,7 +80,7 @@ public class ObjectLayout {
         return align(base + ((Object[])o).length  * scale, VMSupport.OBJECT_ALIGNMENT);
     }
 
-    public static void analyze(PrintStream pw, Class klass) throws Exception {
+    public static int analyze(PrintStream pw, Class klass) throws Exception {
         SortedSet<FieldInfo> set = new TreeSet<FieldInfo>();
 
         for (Field f : klass.getDeclaredFields()) {
@@ -133,6 +133,8 @@ public class ObjectLayout {
         } else {
             pw.println("VM agent is not enabled, use -javaagent: to add this JAR as Java agent");
         }
+
+        return aligned;
     }
 
     public static int align(int addr, int align) {
