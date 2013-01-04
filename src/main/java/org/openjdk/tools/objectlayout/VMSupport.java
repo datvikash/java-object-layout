@@ -126,12 +126,12 @@ public class VMSupport {
     }
 
     public static void detect(PrintStream out) {
-        out.print("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit VM, ");
+        out.println("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit " + System.getProperty("java.vm.name") + " VM.");
         if (OOP_SIZE != ADDRESS_SIZE) {
-            out.print("using compressed references" +
-                    (autoCompressedOops ? "(automatically guessed, can be unreliable), " : ", "));
+            out.println("Using compressed references" +
+                    (autoCompressedOops ? " (automatically guessed, can be unreliable)." : "."));
         }
-        out.println("objects are " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned" +
+        out.println("Objects are " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned" +
                 (autoObjectAlignment ? " (automatically guessed, can be unreliable)." : "."));
         out.println();
     }
