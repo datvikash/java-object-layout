@@ -11,7 +11,9 @@ Prepare:
 
 Dump the fields of some class:
   $ java -jar target/java-object-layout.jar java.util.HashMap
-     Running 64-bit VM, using compressed references, objects are 8 bytes aligned.
+     Running 64-bit HotSpot VM.
+     Using compressed references with 3-bit shift.
+     Objects are 8 bytes aligned.
 
      java.util.HashMap
       offset  size       type description
@@ -34,7 +36,9 @@ Dump the fields of some class:
 Traverse the reachability graph and count instances and their sizes
 (this should be more convenient to use once we publish the Maven artifact):
   $ java -jar target/java-object-graph.jar java.util.HashMap
-     Running 64-bit VM, using compressed references, objects are 8 bytes aligned.
+     Running 64-bit HotSpot VM.
+     Using compressed references with 3-bit shift.
+     Objects are 8 bytes aligned.
 
      java.util.HashMap instance:
       count  size   avg description
