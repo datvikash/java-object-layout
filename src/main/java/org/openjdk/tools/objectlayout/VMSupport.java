@@ -222,7 +222,7 @@ public class VMSupport {
     public static void detect(PrintStream out) {
         out.println("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit " + OPTIONS.name + " VM.");
         if (OPTIONS.compressedRef)
-            out.println("Using compressed references.");
+            out.println("Using compressed references with " + OPTIONS.compressRefShift + "-bit shift.");
 
         out.println("Objects are " + OPTIONS.objectAlignment + " bytes aligned.");
         out.println();
