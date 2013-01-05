@@ -21,11 +21,12 @@ package org.openjdk.tools.objectlayout;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
-import com.sun.management.HotSpotDiagnosticMXBean;
 import sun.misc.Unsafe;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.management.RuntimeMBeanException;
+import javax.management.openmbean.CompositeDataSupport;
 import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
@@ -125,24 +126,30 @@ public class VMSupport {
 
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(server,
-                    "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
-            boolean compressedOops = Boolean.valueOf(mxBean.getVMOption("UseCompressedOops").getValue());
-            if (compressedOops) {
-                // if compressed oops are enabled, then this option is also accessible
-                int align = Integer.valueOf(mxBean.getVMOption("ObjectAlignmentInBytes").getValue());
-                return new VMOptions("HotSpot", log2p(align));
-            } else {
+
+            try {
+                ObjectName mbean = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
+                CompositeDataSupport compressedOopsValue = (CompositeDataSupport) server.invoke(mbean, "getVMOption", new Object[]{"UseCompressedOops"}, new String[]{"java.lang.String"});
+                boolean compressedOops = Boolean.valueOf(compressedOopsValue.get("value").toString());
+                if (compressedOops) {
+                    // if compressed oops are enabled, then this option is also accessible
+                    CompositeDataSupport alignmentValue = (CompositeDataSupport) server.invoke(mbean, "getVMOption", new Object[]{"ObjectAlignmentInBytes"}, new String[]{"java.lang.String"});
+                    int align = Integer.valueOf(alignmentValue.get("value").toString());
+                    return new VMOptions("HotSpot", log2p(align));
+                } else {
+                    return new VMOptions("HotSpot");
+                }
+
+            } catch (RuntimeMBeanException iae) {
                 return new VMOptions("HotSpot");
             }
-        } catch (IllegalArgumentException iae) {
-            // no option, must be 32-bit Hotspot
-            return new VMOptions("HotSpot");
         } catch (RuntimeException re) {
             System.err.println("Failed to read HotSpot-specific configuration properly, please report this as the bug");
+            re.printStackTrace();
             return null;
         } catch (Exception exp) {
             System.err.println("Failed to read HotSpot-specific configuration properly, please report this as the bug");
+            exp.printStackTrace();
             return null;
         }
     }
@@ -150,7 +157,7 @@ public class VMSupport {
     private static VMOptions getJRockitSpecifics() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            String str = (String) server.invoke(new ObjectName("oracle.jrockit.management:type=DiagnosticCommand"), "execute", new Object[]{"print_vm_state"}, new String[] { "java.lang.String"});
+            String str = (String) server.invoke(new ObjectName("oracle.jrockit.management:type=DiagnosticCommand"), "execute", new Object[]{"print_vm_state"}, new String[]{"java.lang.String"});
 //            System.err.println(str);
             return null;
         } catch (RuntimeException re) {
@@ -159,7 +166,6 @@ public class VMSupport {
             return null;
         }
     }
-
 
 
     static {
@@ -210,7 +216,7 @@ public class VMSupport {
     }
 
     public static int guessAlignment(int oopSize) {
-        final int COUNT = 1000*1000;
+        final int COUNT = 1000 * 1000;
         Object[] array = new Object[COUNT];
         long[] offsets = new long[COUNT];
 
