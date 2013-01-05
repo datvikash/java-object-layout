@@ -64,14 +64,14 @@ public class TestClassWalker {
         ObjectGraphWalker cw = new ObjectGraphWalker(new ArraySample());
         Assert.assertEquals(1, cw.getClassCounts().count(ArraySample.class));
         Assert.assertEquals(1, cw.getClassCounts().count(boolean[].class));
-        Assert.assertTrue(cw.getClassSizes().count(boolean[].class)   > 245* ObjectLayout.sizeOfType(boolean.class));
-        Assert.assertTrue(cw.getClassSizes().count(byte[].class)      > 245* ObjectLayout.sizeOfType(byte.class));
-        Assert.assertTrue(cw.getClassSizes().count(short[].class)     > 245* ObjectLayout.sizeOfType(short.class));
-        Assert.assertTrue(cw.getClassSizes().count(char[].class)      > 245* ObjectLayout.sizeOfType(char.class));
-        Assert.assertTrue(cw.getClassSizes().count(int[].class)       > 245* ObjectLayout.sizeOfType(int.class));
-        Assert.assertTrue(cw.getClassSizes().count(long[].class)      > 245* ObjectLayout.sizeOfType(long.class));
-        Assert.assertTrue(cw.getClassSizes().count(double[].class)    > 245* ObjectLayout.sizeOfType(double.class));
-        Assert.assertTrue(cw.getClassSizes().count(float[].class)     > 245* ObjectLayout.sizeOfType(float.class));
+        Assert.assertTrue(cw.getClassSizes().count(boolean[].class)   > 245* VMSupport.sizeOfType(boolean.class));
+        Assert.assertTrue(cw.getClassSizes().count(byte[].class)      > 245* VMSupport.sizeOfType(byte.class));
+        Assert.assertTrue(cw.getClassSizes().count(short[].class)     > 245* VMSupport.sizeOfType(short.class));
+        Assert.assertTrue(cw.getClassSizes().count(char[].class)      > 245* VMSupport.sizeOfType(char.class));
+        Assert.assertTrue(cw.getClassSizes().count(int[].class)       > 245* VMSupport.sizeOfType(int.class));
+        Assert.assertTrue(cw.getClassSizes().count(long[].class)      > 245* VMSupport.sizeOfType(long.class));
+        Assert.assertTrue(cw.getClassSizes().count(double[].class)    > 245* VMSupport.sizeOfType(double.class));
+        Assert.assertTrue(cw.getClassSizes().count(float[].class)     > 245* VMSupport.sizeOfType(float.class));
     }
 
     public static class ArraySample {

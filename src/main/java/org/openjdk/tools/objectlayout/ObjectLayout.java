@@ -33,11 +33,11 @@ public class ObjectLayout {
 
     public static int sizeOf(Object o) throws Exception {
         if (VMSupport.INSTRUMENTATION != null) {
-            return align((int) VMSupport.INSTRUMENTATION.getObjectSize(o), VMSupport.OBJECT_ALIGNMENT);
+            return VMSupport.align((int) VMSupport.INSTRUMENTATION.getObjectSize(o));
         }
 
         if (o.getClass().isArray()) {
-            return align(sizeOfArray(o), VMSupport.OBJECT_ALIGNMENT);
+            return VMSupport.align(sizeOfArray(o));
         }
 
         SortedSet<FieldInfo> set = new TreeSet<FieldInfo>();
@@ -59,9 +59,9 @@ public class ObjectLayout {
         }
 
         if (!set.isEmpty()) {
-            return align(set.last().offset + set.last().getSize(), VMSupport.OBJECT_ALIGNMENT);
+            return VMSupport.align(set.last().offset + set.last().getSize());
         } else {
-            return align(VMSupport.HEADER_SIZE, VMSupport.OBJECT_ALIGNMENT);
+            return VMSupport.align(VMSupport.HEADER_SIZE);
         }
     }
 
@@ -77,7 +77,7 @@ public class ObjectLayout {
         if (type == float.class)    return base + ((float[])o).length   * scale;
         if (type == long.class)     return base + ((long[])o).length    * scale;
         if (type == double.class)   return base + ((double[])o).length  * scale;
-        return align(base + ((Object[])o).length  * scale, VMSupport.OBJECT_ALIGNMENT);
+        return VMSupport.align(base + ((Object[])o).length  * scale);
     }
 
     public static int analyze(PrintStream pw, Class klass) throws Exception {
@@ -117,7 +117,7 @@ public class ObjectLayout {
 
             nextFree = f.offset + f.getSize();
         }
-        int aligned = align(nextFree, VMSupport.OBJECT_ALIGNMENT);
+        int aligned = VMSupport.align(nextFree);
         if (aligned != nextFree) {
             pw.printf(" %6d %5s %" + maxLength + "s %s\n", nextFree, aligned - nextFree, "", "(loss due to the next object alignment)");
         }
@@ -135,26 +135,6 @@ public class ObjectLayout {
         }
 
         return aligned;
-    }
-
-    public static int align(int addr, int align) {
-        if ((addr % align) == 0) {
-            return addr;
-        } else {
-            return ((addr / align) + 1) * align;
-        }
-    }
-
-    public static int sizeOfType(Class<?> type) {
-        if (type == byte.class)    { return 1; }
-        if (type == boolean.class) { return 1; }
-        if (type == short.class)   { return 2; }
-        if (type == char.class)    { return 2; }
-        if (type == int.class)     { return 4; }
-        if (type == float.class)   { return 4; }
-        if (type == long.class)    { return 8; }
-        if (type == double.class)  { return 8; }
-        return VMSupport.OOP_SIZE;
     }
 
     public static class FieldInfo implements Comparable<FieldInfo> {
@@ -183,7 +163,7 @@ public class ObjectLayout {
         }
 
         public int getSize() {
-            return sizeOfType(type);
+            return VMSupport.sizeOfType(type);
         }
 
         public String getType() {

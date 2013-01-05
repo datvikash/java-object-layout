@@ -25,6 +25,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import sun.misc.Unsafe;
 
 import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
@@ -37,27 +38,129 @@ public class VMSupport {
 
     public final static Unsafe U;
     public final static int ADDRESS_SIZE;
-    public final static int OOP_SIZE;
     public final static int HEADER_SIZE;
-    public final static int OBJECT_ALIGNMENT;
+    private final static VMOptions OPTIONS;
 
-    private static final String HOTSPOT_BEAN_NAME =
-            "com.sun.management:type=HotSpotDiagnostic";
+    private static class VMOptions {
+        private final String name;
+        private final boolean compressedRef;
+        private final int compressRefShift;
+        private final int objectAlignment;
+        private final int referenceSize;
 
-    private static HotSpotDiagnosticMXBean getHotspotMBean() {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            return ManagementFactory.newPlatformMXBeanProxy(server,
-                    HOTSPOT_BEAN_NAME, HotSpotDiagnosticMXBean.class);
-        } catch (RuntimeException re) {
-            throw re;
-        } catch (Exception exp) {
-            throw new RuntimeException(exp);
+        public VMOptions(String name) {
+            this.name = name;
+            this.referenceSize = U.addressSize();
+            this.objectAlignment = guessAlignment(this.referenceSize);
+            this.compressedRef = false;
+            this.compressRefShift = 1;
+        }
+
+        public VMOptions(String name, int shift) {
+            this.name = name;
+            this.referenceSize = 4;
+            this.objectAlignment = guessAlignment(this.referenceSize) << shift;
+            this.compressedRef = true;
+            this.compressRefShift = shift;
+        }
+
+        public long toNativeAddress(long address) {
+            if (compressedRef) {
+                return address << compressRefShift;
+            } else {
+                return address;
+            }
         }
     }
 
-    private static boolean autoCompressedOops;
-    private static boolean autoObjectAlignment;
+    public static int align(int addr) {
+        int align = OPTIONS.objectAlignment;
+        if ((addr % align) == 0) {
+            return addr;
+        } else {
+            return ((addr / align) + 1) * align;
+        }
+    }
+
+    private static int log2p(int x) {
+        int r = 0;
+        while ((x >>= 1) != 0)
+            r++;
+        return r;
+    }
+
+    private static VMOptions getOptions() {
+        // try Hotspot
+        VMOptions hsOpts = getHotspotSpecifics();
+        if (hsOpts != null) return hsOpts;
+
+        // try JRockit
+        VMOptions jrOpts = getJRockitSpecifics();
+        if (jrOpts != null) return jrOpts;
+
+        // When running with CompressedOops on 64-bit platform, the address size
+        // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
+        // Try to guess the reference field size with this naive trick.
+        int oopSize;
+        try {
+            long off1 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
+            long off2 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
+            oopSize = (int) Math.abs(off2 - off1);
+        } catch (NoSuchFieldException e) {
+            oopSize = -1;
+        }
+
+        if (oopSize != U.addressSize()) {
+            return new VMOptions("Auto-detected", 3); // assume compressed references have << 3 shift
+        } else {
+            return new VMOptions("Auto-detected");
+        }
+    }
+
+    private static VMOptions getHotspotSpecifics() {
+        String name = System.getProperty("java.vm.name");
+        if (!name.contains("HotSpot") && !name.contains("OpenJDK")) {
+            return null;
+        }
+
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(server,
+                    "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
+            boolean compressedOops = Boolean.valueOf(mxBean.getVMOption("UseCompressedOops").getValue());
+            if (compressedOops) {
+                // if compressed oops are enabled, then this option is also accessible
+                int align = Integer.valueOf(mxBean.getVMOption("ObjectAlignmentInBytes").getValue());
+                return new VMOptions("HotSpot", log2p(align));
+            } else {
+                return new VMOptions("HotSpot");
+            }
+        } catch (IllegalArgumentException iae) {
+            // no option, must be 32-bit Hotspot
+            return new VMOptions("HotSpot");
+        } catch (RuntimeException re) {
+            System.err.println("Failed to read HotSpot-specific configuration properly, please report this as the bug");
+            return null;
+        } catch (Exception exp) {
+            System.err.println("Failed to read HotSpot-specific configuration properly, please report this as the bug");
+            return null;
+        }
+    }
+
+    private static VMOptions getJRockitSpecifics() {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            String str = (String) server.invoke(new ObjectName("oracle.jrockit.management:type=DiagnosticCommand"), "execute", new Object[]{"print_vm_state"}, new String[] { "java.lang.String"});
+//            System.err.println(str);
+            return null;
+        } catch (RuntimeException re) {
+            return null;
+        } catch (Exception exp) {
+            return null;
+        }
+    }
+
+
 
     static {
         // steal Unsafe
@@ -72,19 +175,6 @@ public class VMSupport {
         }
 
         int headerSize;
-        int oopSize;
-
-        // When running with CompressedOops on 64-bit platform, the address size
-        // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
-        // Try to guess the reference field size with this naive trick.
-        try {
-            long off1 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
-            long off2 = U.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
-            oopSize = (int) Math.abs(off2 - off1);
-        } catch (NoSuchFieldException e) {
-            oopSize = -1;
-        }
-
         try {
             long off1 = U.objectFieldOffset(HeaderClass.class.getField("b1"));
             headerSize = (int) off1;
@@ -94,31 +184,7 @@ public class VMSupport {
 
         ADDRESS_SIZE = U.addressSize();
         HEADER_SIZE = headerSize;
-
-        try {
-            HotSpotDiagnosticMXBean mBean = getHotspotMBean();
-            oopSize = Boolean.valueOf(mBean.getVMOption("UseCompressedOops").getValue()) ? 4 : 8;
-        } catch (Exception e) {
-            // not the hotspot, or 32-bit version, falling back
-            autoCompressedOops = true;
-        }
-        OOP_SIZE = oopSize;
-
-        int alignment;
-        try {
-            HotSpotDiagnosticMXBean mBean = getHotspotMBean();
-            alignment = Integer.valueOf(mBean.getVMOption("ObjectAlignmentInBytes").getValue());
-        } catch (Exception e) {
-            // not the hotspot? falling back
-            if (VMSupport.ADDRESS_SIZE != VMSupport.OOP_SIZE) {
-                alignment = guessAlignment() * 8; // assume compressed oops are << 3
-            } else {
-                alignment = guessAlignment();
-            }
-            autoObjectAlignment = true;
-        }
-        OBJECT_ALIGNMENT = alignment;
-
+        OPTIONS = getOptions();
     }
 
     public static void storeInstrumentation(Instrumentation inst) {
@@ -126,13 +192,11 @@ public class VMSupport {
     }
 
     public static void detect(PrintStream out) {
-        out.println("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit " + System.getProperty("java.vm.name") + " VM.");
-        if (OOP_SIZE != ADDRESS_SIZE) {
-            out.println("Using compressed references" +
-                    (autoCompressedOops ? " (automatically guessed, can be unreliable)." : "."));
-        }
-        out.println("Objects are " + VMSupport.OBJECT_ALIGNMENT + " bytes aligned" +
-                (autoObjectAlignment ? " (automatically guessed, can be unreliable)." : "."));
+        out.println("Running " + (VMSupport.ADDRESS_SIZE * 8) + "-bit " + OPTIONS.name + " VM.");
+        if (OPTIONS.compressedRef)
+            out.println("Using compressed references.");
+
+        out.println("Objects are " + OPTIONS.objectAlignment + " bytes aligned.");
         out.println();
     }
 
@@ -145,7 +209,7 @@ public class VMSupport {
         public boolean b1;
     }
 
-    public static int guessAlignment() {
+    public static int guessAlignment(int oopSize) {
         final int COUNT = 1000*1000;
         Object[] array = new Object[COUNT];
         long[] offsets = new long[COUNT];
@@ -157,7 +221,7 @@ public class VMSupport {
         }
 
         for (int c = 0; c < COUNT; c++) {
-            offsets[c] = addressOf(array[c]);
+            offsets[c] = addressOf(array[c], oopSize);
         }
 
         Arrays.sort(offsets);
@@ -202,11 +266,15 @@ public class VMSupport {
     }
 
     public static long addressOf(Object o) {
+        return addressOf(o, OPTIONS.referenceSize);
+    }
+
+    public static long addressOf(Object o, int oopSize) {
         Object[] array = new Object[]{o};
 
         long baseOffset = U.arrayBaseOffset(Object[].class);
         long objectAddress;
-        switch (OOP_SIZE) {
+        switch (oopSize) {
             case 4:
                 objectAddress = U.getInt(array, baseOffset);
                 break;
@@ -214,7 +282,7 @@ public class VMSupport {
                 objectAddress = U.getLong(array, baseOffset);
                 break;
             default:
-                throw new Error("unsupported address size: " + OOP_SIZE);
+                throw new Error("unsupported address size: " + oopSize);
         }
 
         return (objectAddress);
@@ -233,6 +301,18 @@ public class VMSupport {
         if (type == long.class) return base + ((long[]) o).length * scale;
         if (type == double.class) return base + ((double[]) o).length * scale;
         return base + ((Object[]) o).length * scale;
+    }
+
+    public static int sizeOfType(Class<?> type) {
+        if (type == byte.class)    { return 1; }
+        if (type == boolean.class) { return 1; }
+        if (type == short.class)   { return 2; }
+        if (type == char.class)    { return 2; }
+        if (type == int.class)     { return 4; }
+        if (type == float.class)   { return 4; }
+        if (type == long.class)    { return 8; }
+        if (type == double.class)  { return 8; }
+        return OPTIONS.referenceSize;
     }
 
     public static void premain(String agentArgs, Instrumentation inst) {
