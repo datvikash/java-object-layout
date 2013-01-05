@@ -32,6 +32,8 @@ import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VMSupport {
 
@@ -155,14 +157,34 @@ public class VMSupport {
     }
 
     private static VMOptions getJRockitSpecifics() {
+        String name = System.getProperty("java.vm.name");
+        if (!name.contains("JRockit")) {
+            return null;
+        }
+
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             String str = (String) server.invoke(new ObjectName("oracle.jrockit.management:type=DiagnosticCommand"), "execute", new Object[]{"print_vm_state"}, new String[]{"java.lang.String"});
-//            System.err.println(str);
+            String[] split = str.split("\n");
+            for (String s : split) {
+                if (s.contains("CompRefs")) {
+                    Pattern pattern = Pattern.compile("(.*?)References are compressed, with heap base (.*?) and shift (.*?)\\.");
+                    Matcher matcher = pattern.matcher(s);
+                    if (matcher.matches()) {
+                        return new VMOptions("JRockit", Integer.valueOf(matcher.group(3)));
+                    } else {
+                        return new VMOptions("JRockit");
+                    }
+                }
+            }
             return null;
         } catch (RuntimeException re) {
+            System.err.println("Failed to read JRockit-specific configuration properly, please report this as the bug");
+            re.printStackTrace();
             return null;
         } catch (Exception exp) {
+            System.err.println("Failed to read JRockit-specific configuration properly, please report this as the bug");
+            exp.printStackTrace();
             return null;
         }
     }
