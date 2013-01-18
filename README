@@ -6,8 +6,11 @@ These tools are using Unsafe heavily to deduce the *actual* object
 layout and footprint. This makes the tools much more accurate than
 others relying on heap dumps, specification assumptions, etc.
 
-Prepare:
+Source compile:
   $ mvn clean install
+
+Alternatively, pick the binary JAR from:
+  http://shipilev.net/builds/java-object-layout/
 
 Dump the fields of some class:
   $ java -jar target/java-object-layout.jar java.util.HashMap
