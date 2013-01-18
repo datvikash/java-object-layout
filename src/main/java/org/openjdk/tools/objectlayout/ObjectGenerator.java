@@ -23,7 +23,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.io.File;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class ObjectGenerator implements Opcodes {
 
@@ -43,13 +48,24 @@ public class ObjectGenerator implements Opcodes {
     }
 
     public static void generateClasses() throws Exception {
-        PrintStream ps = System.out;
-        for (int i = 0; i < 256*256*4; i++) {
-            ObjectLayout.analyze(ps, buildClass("Sample" + i, i));
-            ps.println();
-        }
-    }
+        final int reportStep = 8192; // should be power of two
+        long time = System.nanoTime();
 
+        PrintStream ps = new PrintStream(new File("classes.layout"));
+        for (int i = 0; i < 256*256*4*16; i++) {
+            Class<?> klass = buildClass("Sample" + i, i);
+
+            ObjectLayout.analyze(ps, klass);
+            ps.println();
+
+            if ((i & (reportStep - 1)) == 0) {
+                long t = System.nanoTime();
+                System.err.printf("%d classes processed in %d msec\n", reportStep, TimeUnit.NANOSECONDS.toMillis(t - time));
+                time = t;
+            }
+        }
+        ps.close();
+    }
 
     public static Class<?> buildClass(String name, int signature) throws Exception {
         ClassWriter cw = new ClassWriter(0);
