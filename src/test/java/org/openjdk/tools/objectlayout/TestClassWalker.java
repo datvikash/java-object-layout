@@ -22,6 +22,8 @@
 package org.openjdk.tools.objectlayout;
 
 import junit.framework.Assert;
+import net.shipilev.tools.objectlayout.ObjectGraphWalker;
+import net.shipilev.tools.objectlayout.VMSupport;
 import org.junit.Test;
 
 public class TestClassWalker {

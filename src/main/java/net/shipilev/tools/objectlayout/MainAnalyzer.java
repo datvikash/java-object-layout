@@ -19,12 +19,22 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.openjdk.tools.objectlayout;
+package net.shipilev.tools.objectlayout;
 
-public class MainGenerator {
+import java.io.PrintStream;
+
+public class MainAnalyzer {
 
     public static void main(String[] args) throws Exception {
-        ObjectGenerator.generateClasses();
+        if (args.length == 0) {
+            System.err.println("Usage: java-object-layout.jar [class-name]");
+            System.exit(1);
+        }
+
+        PrintStream out = System.out;
+
+        VMSupport.detect(out);
+        ObjectLayout.analyze(out, Class.forName(args[0]));
     }
 
 }

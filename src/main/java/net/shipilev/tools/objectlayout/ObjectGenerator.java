@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.openjdk.tools.objectlayout;
+package net.shipilev.tools.objectlayout;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -27,9 +27,6 @@ import org.objectweb.asm.Type;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ObjectGenerator implements Opcodes {

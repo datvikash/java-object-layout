@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
-package org.openjdk.tools.objectlayout;
+package net.shipilev.tools.objectlayout;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
