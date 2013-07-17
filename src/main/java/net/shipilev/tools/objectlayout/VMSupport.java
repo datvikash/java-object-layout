@@ -21,8 +21,7 @@
  */
 package net.shipilev.tools.objectlayout;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
+import net.shipilev.tools.objectlayout.util.Multiset;
 import sun.misc.Unsafe;
 
 import javax.management.MBeanServer;
@@ -33,7 +32,9 @@ import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -256,13 +257,13 @@ public class VMSupport {
 
         Arrays.sort(offsets);
 
-        Multiset<Integer> sizes = HashMultiset.create();
+        List<Integer> sizes = new ArrayList<Integer>();
         for (int c = 1; c < COUNT; c++) {
             sizes.add((int) (offsets[c] - offsets[c - 1]));
         }
 
         int min = -1;
-        for (int s : sizes.elementSet()) {
+        for (int s : sizes) {
             if (s <= 0) continue;
             if (min == -1) {
                 min = s;

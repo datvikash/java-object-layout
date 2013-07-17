@@ -21,8 +21,6 @@
  */
 package net.shipilev.tools.objectlayout;
 
-import com.google.common.collect.Multiset;
-
 import java.io.PrintStream;
 
 public class ObjectGraph {
@@ -37,10 +35,11 @@ public class ObjectGraph {
 
             pw.println(o.getClass().getName() + " instance:");
             pw.printf(" %5s %5s %5s %s\n", "count", "size", "avg", "description");
-            for (Multiset.Entry<Class<?>> entry : walker.getClassCounts().entrySet()) {
-                int size = walker.getClassSizes().count(entry.getElement());
-                pw.printf(" %5d %5d %5d %s\n", entry.getCount(), size, size/entry.getCount(), entry.getElement().getName());
-                totalCount += entry.getCount();
+            for (Class<?> key : walker.getClassCounts().keys()) {
+                int count = walker.getClassCounts().count(key);
+                int size = walker.getClassSizes().count(key);
+                pw.printf(" %5d %5d %5d %s\n", count, size, size/count, key.getName());
+                totalCount += count;
                 totalSize += size;
             }
             pw.printf(" %5d %5d %5s %s\n", totalCount, totalSize, "", "(total)");

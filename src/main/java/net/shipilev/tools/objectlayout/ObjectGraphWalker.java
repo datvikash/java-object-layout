@@ -21,8 +21,7 @@
  */
 package net.shipilev.tools.objectlayout;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
+import net.shipilev.tools.objectlayout.util.Multiset;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -32,8 +31,8 @@ public class ObjectGraphWalker {
 
     private final Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
-    private final Multiset<Class<?>> classSizes = HashMultiset.create();
-    private final Multiset<Class<?>> classCounts = HashMultiset.create();
+    private final Multiset<Class<?>> classSizes = new Multiset<Class<?>>();
+    private final Multiset<Class<?>> classCounts = new Multiset<Class<?>>();
     private final Object root;
     private boolean walked;
 
